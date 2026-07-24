@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Inspection System — Login</title>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --navy:#0f2744;--blue:#1a56db;--green:#0a7c4e;--green-lt:#d1fae5;
+  --red:#b91c1c;--red-lt:#fee2e2;--border:#cbd5e1;--surface:#f8fafc;
+  --white:#fff;--muted:#64748b;--slate:#334155;
+  --mono:'IBM Plex Mono',monospace;--sans:'IBM Plex Sans',sans-serif;
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+body{font-family:var(--sans);background:linear-gradient(135deg,#0f2744 0%,#1a3a6b 60%,#0f2744 100%);
+  min-height:100vh;display:flex;align-items:center;justify-content:center;padding:1rem}
+
+/* background dots */
+body::before{content:'';position:fixed;inset:0;
+  background-image:radial-gradient(rgba(255,255,255,.04) 1px,transparent 1px);
+  background-size:32px 32px;pointer-events:none}
+
+.card{background:var(--white);border-radius:20px;width:100%;max-width:420px;
+  overflow:hidden;box-shadow:0 24px 64px rgba(0,0,0,.35);
+  animation:rise .4s cubic-bezier(.4,0,.2,1)}
+@keyframes rise{from{opacity:0;transform:translateY(24px)}to{opacity:1;transform:translateY(0)}}
+
+.card-top{background:var(--navy);padding:36px 36px 28px;text-align:center;
+  position:relative;overflow:hidden}
+.card-top::after{content:'';position:absolute;bottom:-30px;left:50%;
+  transform:translateX(-50%);width:120px;height:60px;
+  background:var(--white);border-radius:50% 50% 0 0}
+
+.logo{width:56px;height:56px;background:rgba(34,211,238,.15);
+  border:2px solid rgba(34,211,238,.3);border-radius:14px;
+  display:inline-flex;align-items:center;justify-content:center;
+  font-size:26px;margin-bottom:16px}
+.card-top h1{font-size:20px;font-weight:600;color:#fff;margin-bottom:6px}
+.card-top p{font-size:13px;color:#94a3b8}
+
+.card-body{padding:40px 36px 36px}
+
+.city-badge{display:flex;align-items:center;justify-content:center;gap:8px;
+  background:var(--surface);border:1px solid var(--border);border-radius:8px;
+  padding:10px 16px;margin-bottom:28px}
+.city-badge span{font-size:12px;font-weight:600;color:var(--muted);
+  text-transform:uppercase;letter-spacing:.06em}
+.city-dot{width:8px;height:8px;border-radius:50%;background:#22d3ee;
+  animation:pulse 2s infinite}
+@keyframes pulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.5;transform:scale(1.4)}}
+
+.field{margin-bottom:20px}
+.field label{display:block;font-size:11px;font-weight:600;color:var(--muted);
+  text-transform:uppercase;letter-spacing:.05em;margin-bottom:7px}
+.pw-wrap{position:relative}
+.pw-wrap input{font-family:var(--mono);font-size:15px;letter-spacing:.08em;
+  padding:12px 44px 12px 14px;border:1.5px solid var(--border);border-radius:9px;
+  background:var(--surface);color:var(--slate);width:100%;transition:all .15s}
+.pw-wrap input:focus{outline:none;border-color:var(--blue);
+  box-shadow:0 0 0 3px rgba(26,86,219,.12);background:var(--white)}
+.pw-wrap input.error{border-color:var(--red);box-shadow:0 0 0 3px rgba(185,28,28,.1)}
+.eye-btn{position:absolute;right:12px;top:50%;transform:translateY(-50%);
+  background:none;border:none;cursor:pointer;font-size:18px;color:var(--muted);
+  padding:4px;line-height:1}
+
+.err-msg{display:none;background:var(--red-lt);border:1px solid #fca5a5;
+  border-radius:7px;padding:10px 14px;margin-top:12px;
+  font-size:13px;color:var(--red);font-weight:500;
+  display:flex;align-items:center;gap:8px}
+.err-msg.show{display:flex;animation:shake .3s ease}
+@keyframes shake{0%,100%{transform:translateX(0)}
+  20%,60%{transform:translateX(-6px)}40%,80%{transform:translateX(6px)}}
+
+.btn-login{width:100%;background:var(--navy);color:#fff;border:none;
+  padding:14px;border-radius:9px;font-size:15px;font-weight:600;
+  cursor:pointer;font-family:var(--sans);transition:all .2s;
+  display:flex;align-items:center;justify-content:center;gap:8px;margin-top:24px}
+.btn-login:hover{background:#162d55;transform:translateY(-2px);
+  box-shadow:0 6px 20px rgba(15,39,68,.35)}
+.btn-login:active{transform:translateY(0)}
+.btn-login:disabled{background:#94a3b8;cursor:not-allowed;transform:none;box-shadow:none}
+.btn-login .spinner{width:18px;height:18px;border:2px solid rgba(255,255,255,.3);
+  border-top-color:#fff;border-radius:50%;display:none;
+  animation:spin .6s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+.footer{text-align:center;margin-top:24px;font-size:11px;color:var(--muted)}
+</style>
+</head>
+<body>
+<div class="card">
+  <div class="card-top">
+    <div class="logo">&#128203;</div>
+    <h1>Inspection Data Collection</h1>
+    <p>Logical &amp; Accuracy Test System</p>
+  </div>
+  <div class="card-body">
+    <div class="city-badge">
+      <div class="city-dot"></div>
+      <span>Central Operations 2026</span>
+    </div>
+
+    <form method="POST" action="/login" onsubmit="handleSubmit(event)">
+      <div class="field">
+        <label>Access Password</label>
+        <div class="pw-wrap">
+          <input type="password" id="pwd" name="password"
+            placeholder="Enter password" autocomplete="current-password"
+            autofocus required>
+          <button type="button" class="eye-btn" onclick="togglePwd()" title="Show/hide password">
+            <span id="eye-icon">&#128065;</span>
+          </button>
+        </div>
+      </div>
+
+      {% if error %}
+      <div class="err-msg show">&#9888; {{ error }}</div>
+      {% else %}
+      <div class="err-msg" id="err-msg">&#9888; Incorrect password. Please try again.</div>
+      {% endif %}
+
+      <button type="submit" class="btn-login" id="login-btn">
+        <span class="spinner" id="spinner"></span>
+        <span id="btn-text">&#128274; Sign In</span>
+      </button>
+    </form>
+
+    <div class="footer">Central Operations &mdash; Data &amp; Processing Technology</div>
+  </div>
+</div>
+
+<script>
+function togglePwd() {
+  var inp  = document.getElementById('pwd');
+  var icon = document.getElementById('eye-icon');
+  if (inp.type === 'password') {
+    inp.type = 'text';
+    icon.textContent = '🙈';
+  } else {
+    inp.type = 'password';
+    icon.textContent = '👁';
+  }
+}
+
+function handleSubmit(e) {
+  var btn     = document.getElementById('login-btn');
+  var spinner = document.getElementById('spinner');
+  var txt     = document.getElementById('btn-text');
+  btn.disabled = true;
+  spinner.style.display = 'block';
+  txt.textContent = 'Signing in...';
+}
+
+// Shake on server-side error
+window.addEventListener('load', function() {
+  var err = document.querySelector('.err-msg.show');
+  if (err) {
+    document.getElementById('pwd').classList.add('error');
+    document.getElementById('pwd').focus();
+  }
+});
+</script>
+</body>
+</html>

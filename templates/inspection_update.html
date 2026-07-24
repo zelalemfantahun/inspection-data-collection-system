@@ -1,0 +1,513 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Update Record — Inspection System</title>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --navy:#0f2744;--blue:#1a56db;--blue-lt:#e8f0fe;
+  --green:#0a7c4e;--green-lt:#d1fae5;
+  --red:#b91c1c;--red-lt:#fee2e2;
+  --amber:#92400e;--amber-lt:#fef3c7;
+  --slate:#334155;--muted:#64748b;--border:#cbd5e1;
+  --surface:#f8fafc;--white:#fff;
+  --mono:'IBM Plex Mono',monospace;--sans:'IBM Plex Sans',sans-serif;
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+body{font-family:var(--sans);background:#eef2f7;min-height:100vh;color:var(--slate)}
+.topbar{background:var(--navy);padding:0 2rem;height:52px;display:flex;align-items:center;
+  justify-content:space-between;position:sticky;top:0;z-index:100;
+  box-shadow:0 2px 12px rgba(0,0,0,.25)}
+.brand{display:flex;align-items:center;gap:10px;color:#fff;font-weight:600;
+  font-size:14px;letter-spacing:.04em;text-transform:uppercase}
+.dot{width:8px;height:8px;border-radius:50%;background:#22d3ee;animation:pulse 2s infinite}
+@keyframes pulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.5;transform:scale(1.4)}}
+.nav-links{display:flex;align-items:center;gap:8px}
+.nav-link{font-size:12px;color:#93c5fd;text-decoration:none;padding:5px 12px;
+  border:1px solid rgba(147,197,253,.3);border-radius:6px}
+.nav-link:hover{background:rgba(147,197,253,.1)}
+.nav-link.active{background:rgba(147,197,253,.18);color:#bfdbfe;
+  border-color:rgba(147,197,253,.5)}
+.page{max-width:860px;margin:0 auto;padding:2rem 1.5rem 4rem}
+.page-title{font-size:18px;font-weight:600;color:var(--navy);margin-bottom:4px}
+.page-sub{font-size:13px;color:var(--muted);margin-bottom:2rem}
+
+/* ── Search card ── */
+.search-card{background:var(--white);border:1px solid var(--border);
+  border-radius:12px;padding:22px;margin-bottom:1.5rem;
+  box-shadow:0 2px 12px rgba(0,0,0,.06)}
+.search-tabs{display:flex;gap:0;margin-bottom:16px;border:1.5px solid var(--border);
+  border-radius:8px;overflow:hidden}
+.stab{flex:1;padding:9px 8px;text-align:center;font-size:12px;font-weight:600;
+  cursor:pointer;background:var(--surface);color:var(--muted);
+  border-right:1px solid var(--border);transition:all .15s}
+.stab:last-child{border-right:none}
+.stab.active{background:var(--navy);color:#fff}
+.stab:hover:not(.active){background:#e2e8f0}
+.search-panel{display:none}
+.search-panel.active{display:block}
+.search-row{display:flex;gap:10px}
+.search-row input,.search-row select{font-family:var(--mono);font-size:14px;
+  font-weight:500;flex:1;padding:10px 14px;border:1.5px solid var(--border);
+  border-radius:8px;background:var(--surface);color:var(--slate);
+  text-transform:uppercase}
+.search-row input:focus,.search-row select:focus{outline:none;
+  border-color:var(--blue);box-shadow:0 0 0 3px rgba(26,86,219,.12)}
+.search-row select{text-transform:none}
+.btn-search{background:var(--navy);color:#fff;border:none;padding:10px 22px;
+  border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;
+  font-family:var(--sans);white-space:nowrap;flex-shrink:0}
+.btn-search:hover{background:#162d55}
+.hint{font-size:11px;color:var(--muted);margin-top:6px}
+
+/* ── Results list (for region/sub search) ── */
+.results-list{margin-bottom:1rem}
+.result-item{background:var(--white);border:1.5px solid var(--border);border-radius:8px;
+  padding:12px 16px;margin-bottom:8px;cursor:pointer;transition:all .15s;
+  display:flex;align-items:center;justify-content:space-between}
+.result-item:hover{border-color:var(--blue);background:var(--blue-lt)}
+.result-item .ri-serial{font-family:var(--mono);font-weight:600;font-size:13px;color:var(--navy)}
+.result-item .ri-info{font-size:12px;color:var(--muted);margin-top:2px}
+.result-item .ri-status{font-size:11px;font-weight:700;padding:3px 10px;
+  border-radius:99px;flex-shrink:0}
+.st-comp{background:var(--green-lt);color:var(--green)}
+.st-fail{background:var(--red-lt);color:var(--red)}
+.st-maint{background:var(--amber-lt);color:var(--amber)}
+.results-count{font-size:12px;color:var(--muted);margin-bottom:10px;font-family:var(--mono)}
+
+/* ── Banners ── */
+.banner{border-radius:8px;padding:12px 16px;margin-bottom:1rem;
+  font-size:13px;display:none;align-items:center;gap:10px}
+.banner.show{display:flex}
+.b-found{background:var(--green-lt);border:1px solid #6ee7b7;color:var(--green)}
+.b-notfound{background:var(--red-lt);border:1px solid #fca5a5;color:var(--red)}
+.b-maint{background:var(--amber-lt);border:1px solid #fcd34d;color:var(--amber)}
+.b-multi{background:var(--blue-lt);border:1px solid #93c5fd;color:var(--blue)}
+
+/* ── Record card ── */
+.rec-card{background:var(--white);border:1px solid var(--border);border-radius:12px;
+  overflow:hidden;display:none;box-shadow:0 2px 12px rgba(0,0,0,.06)}
+.rec-card.show{display:block;animation:slideIn .25s ease}
+@keyframes slideIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+.rh{background:var(--navy);padding:14px 20px;display:flex;align-items:center;gap:10px}
+.ri-icon{width:28px;height:28px;background:rgba(255,255,255,.12);border-radius:6px;
+  display:flex;align-items:center;justify-content:center;font-size:14px}
+.rh h2{font-size:13px;font-weight:600;color:#fff;letter-spacing:.04em;text-transform:uppercase}
+.sb-serial{margin-left:auto;font-family:var(--mono);font-size:12px;
+  background:rgba(255,255,255,.15);color:#e2e8f0;padding:4px 10px;border-radius:4px}
+.rb{padding:20px}
+.status-disp{display:flex;align-items:center;gap:12px;padding:12px 16px;
+  border-radius:8px;margin-bottom:20px;border:1px solid}
+.status-disp.COMPLETED{background:var(--green-lt);border-color:#6ee7b7}
+.status-disp.FAILED{background:var(--red-lt);border-color:#fca5a5}
+.status-disp.UNDER_MAINTENANCE{background:var(--amber-lt);border-color:#fcd34d}
+.si-icon{font-size:24px}
+.si-text{flex:1}
+.si-text strong{display:block;font-size:13px}
+.si-text span{font-size:12px;color:var(--muted)}
+.info-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:20px}
+.ii{background:var(--surface);border:1px solid var(--border);border-radius:7px;padding:10px 12px}
+.ii label{display:block;font-size:10px;font-weight:600;color:var(--muted);
+  text-transform:uppercase;letter-spacing:.05em;margin-bottom:3px}
+.ii span{font-size:13px;font-weight:500;font-family:var(--mono);color:var(--slate)}
+hr.div{border:none;border-top:1.5px dashed var(--border);margin:20px 0}
+.edit-title{font-size:12px;font-weight:600;color:var(--muted);
+  text-transform:uppercase;letter-spacing:.05em;margin-bottom:14px}
+.fg{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px}
+.field{display:flex;flex-direction:column;gap:5px}
+.field label{font-size:11px;font-weight:600;color:var(--muted);
+  text-transform:uppercase;letter-spacing:.05em}
+input,select,textarea{font-family:var(--sans);font-size:14px;padding:9px 12px;
+  border:1.5px solid var(--border);border-radius:7px;background:var(--surface);
+  color:var(--slate);width:100%;transition:border-color .15s}
+input:focus,select:focus,textarea:focus{outline:none;border-color:var(--blue);
+  box-shadow:0 0 0 3px rgba(26,86,219,.12)}
+textarea{resize:vertical;min-height:72px}
+.sg{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:16px}
+.sb{border:2px solid var(--border);border-radius:8px;padding:12px 8px;text-align:center;
+  cursor:pointer;transition:all .15s;background:var(--surface)}
+.sb .sbi{font-size:22px;display:block;margin-bottom:5px}
+.sb .sbl{font-size:11px;font-weight:600;text-transform:uppercase;
+  letter-spacing:.04em;color:var(--muted)}
+.sb:hover{border-color:var(--blue);background:var(--blue-lt)}
+.sb.sel-COMPLETED{border-color:var(--green);background:var(--green-lt)}
+.sb.sel-COMPLETED .sbl{color:var(--green)}
+.sb.sel-FAILED{border-color:var(--red);background:var(--red-lt)}
+.sb.sel-FAILED .sbl{color:var(--red)}
+.sb.sel-UNDER_MAINTENANCE{border-color:#d97706;background:var(--amber-lt)}
+.sb.sel-UNDER_MAINTENANCE .sbl{color:var(--amber)}
+.action-row{display:flex;justify-content:flex-end;gap:10px;margin-top:20px}
+.btn{padding:10px 22px;border-radius:8px;font-size:13px;font-weight:600;
+  cursor:pointer;border:none;transition:all .15s;font-family:var(--sans)}
+.bs{background:var(--white);color:var(--slate);border:1.5px solid var(--border)}
+.bs:hover{background:var(--surface)}
+.bsave{background:var(--green);color:#fff;padding:12px 28px;font-size:14px}
+.bsave:hover{background:#085f3b;transform:translateY(-1px)}
+.bsave:disabled{background:var(--border);cursor:not-allowed;transform:none}
+.pw{display:none;background:var(--navy);border-radius:10px;padding:16px 20px;
+  margin-top:14px;text-align:center}
+.pw.show{display:block}
+.pbg{background:rgba(255,255,255,.1);border-radius:99px;height:5px;
+  margin:10px 0;overflow:hidden}
+.pb{height:100%;background:#22d3ee;border-radius:99px;width:0%;transition:width .4s}
+.pm{font-size:12px;color:#94a3b8;font-family:var(--mono)}
+.suc{display:none;text-align:center;padding:2.5rem 2rem}
+.suc.show{display:block;animation:slideIn .3s ease}
+.suc-icon{font-size:56px;margin-bottom:14px;display:block}
+.suc h2{font-size:20px;font-weight:600;color:var(--navy);margin-bottom:8px}
+.suc p{color:var(--muted);font-size:13px;margin-bottom:20px}
+.em{font-size:11px;color:var(--red);margin-top:3px;display:none}
+.alert-box{display:none;position:fixed;top:70px;left:50%;transform:translateX(-50%);
+  background:#1e3a5f;border:2px solid #f59e0b;border-radius:12px;padding:20px 24px;
+  z-index:9999;max-width:420px;width:90%;box-shadow:0 8px 32px rgba(0,0,0,.35);text-align:center}
+.alert-box.show{display:block;animation:slideIn .25s ease}
+@media(max-width:600px){.fg,.sg,.info-grid{grid-template-columns:1fr}
+  .search-tabs .stab{font-size:10px;padding:8px 4px}}
+</style>
+</head>
+<body>
+<div class="topbar">
+  <div class="brand"><div class="dot"></div>Inspection System</div>
+  <div class="nav-links">
+    <a class="nav-link" href="/">&#43; New Record</a>
+    <a class="nav-link active" href="/update">&#9998; Update</a>
+    <a class="nav-link" href="/dashboard">&#128202; Dashboard</a>
+  </div>
+</div>
+
+<div class="page">
+  <div class="page-title">&#9998; Update Existing Record</div>
+  <div class="page-sub">Search by serial number, region, or sub to find and update a device record.</div>
+
+  <!-- Search card -->
+  <div class="search-card">
+    <div class="search-tabs">
+      <div class="stab active" id="tab-serial" onclick="switchTab('serial')">&#128269; Serial Number</div>
+      <div class="stab" id="tab-region"   onclick="switchTab('region')">&#127968; Region</div>
+      <div class="stab" id="tab-sub"    onclick="switchTab('sub')">&#128205; Sub</div>
+    </div>
+
+    <!-- Serial search -->
+    <div class="search-panel active" id="panel-serial">
+      <div class="search-row">
+        <input type="text" id="inp-serial" placeholder="DS0322321034"
+          maxlength="20" autocomplete="off" spellcheck="false"
+          onkeydown="if(event.key==='Enter') doSearch()">
+        <button class="btn-search" onclick="doSearch()">&#128269; Search</button>
+      </div>
+      <div class="hint">Enter the full DS serial number</div>
+    </div>
+
+    <!-- Region search -->
+    <div class="search-panel" id="panel-region">
+      <div class="search-row">
+        <select id="inp-region" style="text-transform:none">
+          <option value="">— Select Region —</option>
+          {% for w in range(1, 26) %}<option value="{{ w }}">Region {{ w }}</option>{% endfor %}
+        </select>
+        <button class="btn-search" onclick="doSearch()">&#128269; Search</button>
+      </div>
+      <div class="hint">Shows all records for the selected region — click a device to update it</div>
+    </div>
+
+    <!-- Sub search -->
+    <div class="search-panel" id="panel-sub">
+      <div class="search-row">
+        <input type="number" id="inp-sub" placeholder="e.g. 45" min="1" max="99"
+          autocomplete="off" onkeydown="if(event.key==='Enter') doSearch()">
+        <button class="btn-search" onclick="doSearch()">&#128269; Search</button>
+      </div>
+      <div class="hint">Enter the sub number to find all devices in that sub</div>
+    </div>
+  </div>
+
+  <!-- Banners -->
+  <div class="banner b-notfound" id="b-notfound">&#10007; No record found. Check the value and try again.</div>
+  <div class="banner b-maint"    id="b-maint">&#128295; This device is currently <strong>&nbsp;UNDER MAINTENANCE&nbsp;</strong> — update below once resolved.</div>
+  <div class="banner b-found"    id="b-found">&#10003; Record found — review and update below.</div>
+  <div class="banner b-multi"    id="b-multi" id="b-multi">&#128202; <span id="b-multi-msg">Multiple records found — select a device below.</span></div>
+
+  <!-- Results list (region/sub search) -->
+  <div class="results-list" id="results-list" style="display:none"></div>
+
+  <!-- Record card -->
+  <div class="rec-card" id="rec-card">
+    <div class="rh">
+      <div class="ri-icon">&#128187;</div>
+      <h2>Device Record</h2>
+      <span class="sb-serial" id="hdr-serial"></span>
+    </div>
+    <div class="rb">
+      <div class="status-disp" id="cur-status-disp">
+        <div class="si-icon" id="cur-icon"></div>
+        <div class="si-text">
+          <strong id="cur-status-txt">Loading...</strong>
+          <span>Current status — update below if changed</span>
+        </div>
+        <div style="font-family:var(--mono);font-size:11px;color:var(--muted)" id="cur-rid"></div>
+      </div>
+      <div class="info-grid">
+        <div class="ii"><label>Region</label><span id="inf-region"></span></div>
+        <div class="ii"><label>Sub</label><span id="inf-sub"></span></div>
+        <div class="ii"><label>Location</label><span id="inf-loc"></span></div>
+        <div class="ii"><label>Date</label><span id="inf-date"></span></div>
+      </div>
+      <hr class="div">
+      <div class="edit-title">&#9998; Update Record</div>
+      <div class="fg">
+        <div class="field">
+          <label>Test Unit Feeder</label>
+          <select id="upd-feeder" autocomplete="off">
+            <option value="">— Select —</option>
+            {% for n in inspectors %}<option value="{{n}}">{{n}}</option>{% endfor %}
+          </select>
+        </div>
+        <div class="field">
+          <label>QA Assurer</label>
+          <select id="upd-qa" autocomplete="off">
+            <option value="">— Select —</option>
+            {% for n in inspectors %}<option value="{{n}}">{{n}}</option>{% endfor %}
+          </select>
+        </div>
+        <div class="field"><label>Main Seal ID</label><input type="text" id="upd-ms" autocomplete="off" maxlength="12"></div>
+        <div class="field"><label>Backup Seal ID</label><input type="text" id="upd-bs" autocomplete="off" maxlength="12"></div>
+        <div class="field"><label>Protected Count</label><input type="number" id="upd-pc" min="0" autocomplete="off"></div>
+        <div class="field"><label>Public Count</label><input type="number" id="upd-pub" min="0" autocomplete="off"></div>
+      </div>
+      <div class="edit-title">&#128203; Update Test Result <span style="color:var(--red)">*</span></div>
+      <div class="em" id="err-status">Please select a status</div>
+      <div class="sg">
+        <div class="sb" id="sb-COMPLETED"         onclick="setSt('COMPLETED')"><span class="sbi">&#9989;</span><span class="sbl">Completed</span></div>
+        <div class="sb" id="sb-FAILED"            onclick="setSt('FAILED')"><span class="sbi">&#10060;</span><span class="sbl">Failed</span></div>
+        <div class="sb" id="sb-UNDER_MAINTENANCE" onclick="setSt('UNDER_MAINTENANCE')"><span class="sbi">&#128295;</span><span class="sbl">Under Maintenance</span></div>
+      </div>
+      <div class="field"><label>Notes</label><textarea id="upd-notes" rows="3" autocomplete="off"></textarea></div>
+      <div class="pw" id="pw"><div class="pm" id="pm">Updating...</div><div class="pbg"><div class="pb" id="pb"></div></div></div>
+      <div class="suc" id="suc">
+        <span class="suc-icon">&#10004;&#65039;</span>
+        <h2>Record Updated</h2>
+        <p id="suc-msg">Status updated in Inspection_Data.xlsx</p>
+        <button class="btn bs" onclick="resetPage()" style="margin-right:8px">&#128269; Search Another</button>
+        <a class="btn bs" href="/dashboard">&#128202; Dashboard</a>
+      </div>
+      <div class="action-row" id="action-row">
+        <button class="btn bs" onclick="resetPage()">&#10005; Cancel</button>
+        <button class="btn bsave" id="save-btn" onclick="saveUpdate()">&#10003; Save Update</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="alert-box" id="alert-box">
+  <div style="font-size:32px;margin-bottom:10px">&#9888;&#65039;</div>
+  <div style="color:#fbbf24;font-weight:600;font-size:15px;margin-bottom:8px" id="alert-title">Alert</div>
+  <div style="color:#bfdbfe;font-size:13px;line-height:1.6;margin-bottom:16px" id="alert-msg"></div>
+  <button onclick="closeAlert()" style="background:#f59e0b;color:#1e3a5f;border:none;
+    padding:9px 22px;border-radius:7px;font-weight:600;cursor:pointer;font-size:13px">OK</button>
+</div>
+
+<script>
+var curStatus = '', currentRecord = null, curTab = 'serial';
+
+function switchTab(tab) {
+  curTab = tab;
+  ['serial','region','sub'].forEach(function(t) {
+    document.getElementById('tab-'   + t).className = 'stab' + (t === tab ? ' active' : '');
+    document.getElementById('panel-' + t).className = 'search-panel' + (t === tab ? ' active' : '');
+  });
+  hideBanners(); hideCard();
+  document.getElementById('results-list').style.display = 'none';
+  document.getElementById('results-list').innerHTML = '';
+}
+
+function doSearch() {
+  hideBanners(); hideCard();
+  document.getElementById('results-list').style.display = 'none';
+  document.getElementById('results-list').innerHTML = '';
+
+  if (curTab === 'serial') {
+    var v = document.getElementById('inp-serial').value.trim().toUpperCase();
+    if (!v.startsWith('DS') || v.length < 12) { showBanner('notfound'); return; }
+    fetch('/api/find/' + encodeURIComponent(v))
+      .then(function(r) { return r.json(); })
+      .then(function(d) {
+        if (!d.found) { showBanner('notfound'); return; }
+        loadRecord(d);
+      }).catch(function() { showBanner('notfound'); });
+
+  } else if (curTab === 'region') {
+    var w = document.getElementById('inp-region').value;
+    if (!w) { showBanner('notfound'); return; }
+    fetch('/api/search?region=' + encodeURIComponent(w))
+      .then(function(r) { return r.json(); })
+      .then(function(d) { showResults(d, 'Region ' + w); })
+      .catch(function() { showBanner('notfound'); });
+
+  } else {
+    var s = document.getElementById('inp-sub').value.trim();
+    if (!s) { showBanner('notfound'); return; }
+    fetch('/api/search?sub=' + encodeURIComponent(s))
+      .then(function(r) { return r.json(); })
+      .then(function(d) { showResults(d, 'Sub ' + s); })
+      .catch(function() { showBanner('notfound'); });
+  }
+}
+
+function showResults(records, label) {
+  if (!records || !records.length) { showBanner('notfound'); return; }
+  if (records.length === 1) { loadRecord(records[0]); showBanner('found'); return; }
+  document.getElementById('b-multi-msg').textContent =
+    records.length + ' records found for ' + label + ' — select a device to update:';
+  showBanner('multi');
+  var list = document.getElementById('results-list');
+  list.style.display = 'block';
+  var icons = {COMPLETED:'✅', FAILED:'❌', UNDER_MAINTENANCE:'🔧'};
+  var stCls = {COMPLETED:'st-comp', FAILED:'st-fail', UNDER_MAINTENANCE:'st-maint'};
+  list.innerHTML = '<div class="results-count">' + records.length + ' devices</div>' +
+    records.map(function(r, i) {
+      var st = r.status || '';
+      return '<div class="result-item" onclick="pickResult(' + i + ')">' +
+        '<div><div class="ri-serial">' + r.row_serial + '</div>' +
+        '<div class="ri-info">Region ' + (r.region||'—') + '  ·  Sub ' + (r.sub||'—') +
+        '  ·  ' + (r.date||'—') + '</div></div>' +
+        '<span class="ri-status ' + (stCls[st]||'') + '">' + (icons[st]||'') + ' ' +
+        st.replace('_',' ') + '</span></div>';
+    }).join('');
+  list._records = records;
+}
+
+function pickResult(i) {
+  var r = document.getElementById('results-list')._records[i];
+  hideBanners();
+  loadRecord(r);
+  if (r.status === 'UNDER_MAINTENANCE') showBanner('maint');
+  else showBanner('found');
+}
+
+function loadRecord(d) {
+  currentRecord = d;
+  document.getElementById('hdr-serial').textContent = d.row_serial;
+  document.getElementById('cur-rid').textContent = 'REC-' + String(d.record_id).padStart(4,'0');
+  var disp = document.getElementById('cur-status-disp');
+  disp.className = 'status-disp ' + d.status;
+  var icons = {COMPLETED:'✅', FAILED:'❌', UNDER_MAINTENANCE:'🔧'};
+  document.getElementById('cur-icon').textContent     = icons[d.status] || '❓';
+  document.getElementById('cur-status-txt').textContent = d.status.replace(/_/g,' ');
+  document.getElementById('inf-region').textContent  = d.region     || '—';
+  document.getElementById('inf-sub').textContent   = d.sub      || '—';
+  document.getElementById('inf-loc').textContent   = d.location || '—';
+  document.getElementById('inf-date').textContent  = d.date     || '—';
+  setSelectVal('upd-feeder', d.feeder);
+  setSelectVal('upd-qa',     d.qa);
+  document.getElementById('upd-ms').value  = d.main_seal        || '';
+  document.getElementById('upd-bs').value  = d.backup_seal      || '';
+  document.getElementById('upd-pc').value  = d.counter_a  || '';
+  document.getElementById('upd-pub').value = d.counter_b     || '';
+  document.getElementById('upd-notes').value = d.notes          || '';
+  setSt(d.status);
+  showCard();
+  if (d.status === 'UNDER_MAINTENANCE') showBanner('maint');
+  else showBanner('found');
+  document.getElementById('rec-card').scrollIntoView({behavior:'smooth', block:'start'});
+}
+
+function setSelectVal(id, val) {
+  var el = document.getElementById(id);
+  for (var i = 0; i < el.options.length; i++) {
+    if (el.options[i].value === val) { el.selectedIndex = i; return; }
+  }
+}
+
+function setSt(s) {
+  curStatus = s;
+  ['COMPLETED','FAILED','UNDER_MAINTENANCE'].forEach(function(x) {
+    document.getElementById('sb-' + x).className = 'sb' + (x === s ? ' sel-' + s : '');
+  });
+  document.getElementById('err-status').style.display = 'none';
+}
+
+function saveUpdate() {
+  if (!curStatus) {
+    document.getElementById('err-status').style.display = 'block'; return;
+  }
+  var btn = document.getElementById('save-btn'); btn.disabled = true;
+  var pw = document.getElementById('pw');
+  var pb = document.getElementById('pb');
+  var pm = document.getElementById('pm');
+  pw.classList.add('show');
+  function p(pct, txt) { pb.style.width = pct + '%'; pm.textContent = txt; }
+  p(40, 'Updating record...');
+  var payload = {
+    serial:          currentRecord.row_serial,
+    record_id:       currentRecord.record_id,
+    feeder:          document.getElementById('upd-feeder').value,
+    qa:              document.getElementById('upd-qa').value,
+    main_seal:       document.getElementById('upd-ms').value,
+    backup_seal:     document.getElementById('upd-bs').value,
+    counter_a: document.getElementById('upd-pc').value,
+    counter_b:    document.getElementById('upd-pub').value,
+    status:          curStatus,
+    notes:           document.getElementById('upd-notes').value,
+  };
+  p(70, 'Saving...');
+  fetch('/api/update', {method:'POST',
+    headers:{'Content-Type':'application/json'}, body:JSON.stringify(payload)})
+  .then(function(r) { return r.json(); })
+  .then(function(j) {
+    if (!j.ok) {
+      pw.classList.remove('show'); btn.disabled = false;
+      if (j.locked) showAlert('Inspection_Data.xlsx is open in Excel',
+        'Please close the Excel file first, then click Save Update again.');
+      else showAlert('Error', j.error || 'Unknown error');
+      return;
+    }
+    p(100, 'Updated!');
+    setTimeout(function() {
+      document.getElementById('action-row').style.display = 'none';
+      pw.classList.remove('show');
+      document.getElementById('suc-msg').textContent =
+        currentRecord.row_serial + ' updated to ' + curStatus.replace(/_/g,' ');
+      document.getElementById('suc').classList.add('show');
+    }, 400);
+  })
+  .catch(function(e) {
+    pw.classList.remove('show'); btn.disabled = false;
+    showAlert('Error', e.message);
+  });
+}
+
+function showBanner(type) {
+  hideBanners();
+  document.getElementById('b-' + type).classList.add('show');
+}
+function hideBanners() {
+  ['notfound','maint','found','multi'].forEach(function(t) {
+    document.getElementById('b-' + t).classList.remove('show');
+  });
+}
+function showCard()  { document.getElementById('rec-card').classList.add('show'); }
+function hideCard()  { document.getElementById('rec-card').classList.remove('show'); currentRecord = null; }
+function showAlert(title, msg) {
+  document.getElementById('alert-title').textContent = title;
+  document.getElementById('alert-msg').textContent   = msg;
+  document.getElementById('alert-box').classList.add('show');
+}
+function closeAlert() { document.getElementById('alert-box').classList.remove('show'); }
+function resetPage() {
+  ['inp-serial','inp-sub'].forEach(function(id) {
+    var el = document.getElementById(id); if(el) el.value = '';
+  });
+  document.getElementById('inp-region').selectedIndex = 0;
+  hideBanners(); hideCard(); curStatus = '';
+  document.getElementById('results-list').style.display = 'none';
+  document.getElementById('results-list').innerHTML = '';
+  document.getElementById('action-row').style.display = 'flex';
+  document.getElementById('suc').classList.remove('show');
+  document.getElementById('pw').classList.remove('show');
+  document.getElementById('save-btn').disabled = false;
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,913 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Inspection Data Collection</title>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --navy:#0f2744;--blue:#1a56db;--blue-lt:#e8f0fe;
+  --green:#0a7c4e;--green-lt:#d1fae5;
+  --red:#b91c1c;--red-lt:#fee2e2;
+  --amber:#92400e;--amber-lt:#fef3c7;
+  --slate:#334155;--muted:#64748b;--border:#cbd5e1;
+  --surface:#f8fafc;--white:#fff;
+  --mono:'IBM Plex Mono',monospace;--sans:'IBM Plex Sans',sans-serif;
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+body{font-family:var(--sans);background:#eef2f7;min-height:100vh;color:var(--slate)}
+.topbar{background:var(--navy);padding:0 2rem;height:52px;display:flex;align-items:center;
+  justify-content:space-between;position:sticky;top:0;z-index:100;
+  box-shadow:0 2px 12px rgba(0,0,0,.25)}
+.brand{display:flex;align-items:center;gap:10px;color:#fff;font-weight:600;
+  font-size:14px;letter-spacing:.04em;text-transform:uppercase}
+.dot{width:8px;height:8px;border-radius:50%;background:#22d3ee;animation:pulse 2s infinite}
+@keyframes pulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.5;transform:scale(1.4)}}
+.nav-links{display:flex;align-items:center;gap:8px}
+.nav-link{font-size:12px;color:#93c5fd;text-decoration:none;padding:5px 12px;
+  border:1px solid rgba(147,197,253,.3);border-radius:6px}
+.nav-link:hover{background:rgba(147,197,253,.1)}
+.page{max-width:900px;margin:0 auto;padding:2rem 1.5rem 4rem}
+.steps{display:flex;margin-bottom:2rem;background:var(--white);
+  border:1px solid var(--border);border-radius:10px;overflow:hidden}
+.step{flex:1;padding:12px 8px;text-align:center;font-size:11px;font-weight:500;
+  color:var(--muted);border-right:1px solid var(--border);transition:all .2s}
+.step:last-child{border-right:none}
+.step .sn{display:block;font-family:var(--mono);font-size:16px;font-weight:600;
+  color:var(--border);line-height:1;margin-bottom:3px}
+.step.active{background:var(--navy);color:#fff}.step.active .sn{color:#22d3ee}
+.step.done{background:var(--green-lt);color:var(--green)}.step.done .sn{color:var(--green)}
+.card{background:var(--white);border:1px solid var(--border);border-radius:12px;
+  margin-bottom:1.25rem;overflow:hidden;display:none}
+.card.active{display:block;animation:slideIn .25s ease}
+@keyframes slideIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+.ch{background:var(--navy);padding:14px 20px;display:flex;align-items:center;gap:10px}
+.ci{width:28px;height:28px;background:rgba(255,255,255,.12);border-radius:6px;
+  display:flex;align-items:center;justify-content:center;font-size:14px}
+.ch h2{font-size:13px;font-weight:600;color:#fff;letter-spacing:.04em;text-transform:uppercase}
+.badge{margin-left:auto;font-family:var(--mono);font-size:10px;
+  background:rgba(255,255,255,.15);color:#e2e8f0;padding:3px 8px;border-radius:4px}
+.cb{padding:20px}
+.af{display:none;background:var(--green-lt);border:1px solid #6ee7b7;border-radius:8px;
+  padding:10px 14px;margin-bottom:16px;font-size:12px;color:var(--green);
+  font-weight:500;align-items:center;gap:8px}
+.af.show{display:flex}
+.db{display:none;background:var(--navy);border-radius:8px;padding:12px 16px;
+  margin-bottom:16px;grid-template-columns:repeat(3,1fr);gap:16px}
+.db.show{display:grid}
+.db label{display:block;font-size:10px;font-family:var(--mono);color:#94a3b8;
+  text-transform:uppercase;letter-spacing:.06em;margin-bottom:3px}
+.db span{font-size:15px;font-weight:600;color:#e2e8f0;font-family:var(--mono)}
+.fg{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.fg.one{grid-template-columns:1fr}
+.field{display:flex;flex-direction:column;gap:5px}
+.field label{font-size:11px;font-weight:600;color:var(--muted);
+  text-transform:uppercase;letter-spacing:.05em}
+.req{color:var(--red);margin-left:2px}
+.at{font-size:9px;background:var(--green-lt);color:var(--green);
+  padding:1px 5px;border-radius:3px;margin-left:5px;font-weight:500}
+input,select,textarea{font-family:var(--sans);font-size:14px;padding:9px 12px;
+  border:1.5px solid var(--border);border-radius:7px;background:var(--surface);
+  color:var(--slate);width:100%;transition:border-color .15s}
+input:focus,select:focus,textarea:focus{outline:none;border-color:var(--blue);
+  box-shadow:0 0 0 3px rgba(26,86,219,.12);background:var(--white)}
+.ro{padding:9px 12px;border:1.5px solid #e2e8f0;border-radius:7px;background:#f1f5f9;
+  color:var(--muted);font-size:14px;font-family:var(--mono);
+  min-height:38px;display:flex;align-items:center}
+textarea{resize:vertical;min-height:72px}
+.dw{position:relative}
+.dw input{font-family:var(--mono);font-size:15px;font-weight:500;
+  letter-spacing:.05em;padding-right:40px;text-transform:uppercase}
+.dspin{position:absolute;right:12px;top:50%;transform:translateY(-50%);
+  width:18px;height:18px;border:2px solid var(--border);border-top-color:var(--blue);
+  border-radius:50%;display:none;animation:spin .6s linear infinite}
+@keyframes spin{to{transform:translateY(-50%) rotate(360deg)}}
+.dok,.der{position:absolute;right:12px;top:50%;transform:translateY(-50%);
+  display:none;font-size:18px}
+.dok{color:var(--green)}.der{color:var(--red)}
+
+/* ── Status buttons ── */
+.sg{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:8px}
+.sb{border:2px solid var(--border);border-radius:8px;padding:14px 8px;text-align:center;
+  cursor:pointer;transition:all .15s;background:var(--surface)}
+.sb .si{font-size:26px;display:block;margin-bottom:6px}
+.sb .sl{font-size:11px;font-weight:600;text-transform:uppercase;
+  letter-spacing:.04em;color:var(--muted)}
+.sb:hover{border-color:var(--blue);background:var(--blue-lt)}
+.sb.sel-COMPLETED{border-color:var(--green);background:var(--green-lt)}
+.sb.sel-COMPLETED .sl{color:var(--green)}
+.sb.sel-FAILED{border-color:var(--red);background:var(--red-lt)}
+.sb.sel-FAILED .sl{color:var(--red)}
+.sb.sel-UNDER_MAINTENANCE{border-color:#d97706;background:var(--amber-lt)}
+.sb.sel-UNDER_MAINTENANCE .sl{color:var(--amber)}
+
+/* ── Checklist sections ── */
+.cl-section{border:1px solid var(--border);border-radius:10px;overflow:hidden;margin-bottom:16px}
+.cl-section-hdr{background:var(--navy);padding:10px 16px;display:flex;
+  align-items:center;justify-content:space-between}
+.cl-section-hdr .cl-title{font-size:12px;font-weight:600;color:#fff;
+  text-transform:uppercase;letter-spacing:.05em}
+.cl-section-hdr .cl-count{font-size:11px;color:#94a3b8;font-family:var(--mono)}
+.btn-select-all{background:rgba(34,211,238,.15);color:#22d3ee;border:1px solid rgba(34,211,238,.3);
+  padding:4px 12px;border-radius:5px;font-size:11px;font-weight:600;
+  cursor:pointer;font-family:var(--sans);transition:all .15s}
+.btn-select-all:hover{background:rgba(34,211,238,.25)}
+.btn-select-all.all-done{background:rgba(34,211,110,.15);color:#4ade80;
+  border-color:rgba(34,211,110,.3)}
+.cl-items{padding:12px 16px;display:flex;flex-direction:column;gap:8px;
+  background:var(--white)}
+.cl-item{display:flex;align-items:center;gap:12px;padding:10px 12px;
+  border-radius:7px;background:var(--surface);border:1.5px solid var(--border);
+  cursor:pointer;transition:all .15s;user-select:none}
+.cl-item:hover{border-color:var(--blue);background:var(--blue-lt)}
+.cl-item.checked{background:var(--green-lt);border-color:#6ee7b7}
+.cl-item input[type=checkbox]{width:18px;height:18px;accent-color:var(--green);
+  cursor:pointer;flex-shrink:0}
+.cl-item-text{font-size:13px;color:var(--slate);flex:1}
+.cl-item.checked .cl-item-text{color:var(--green);font-weight:500}
+.cl-checkmark{font-size:16px;color:var(--green);display:none}
+.cl-item.checked .cl-checkmark{display:block}
+.cl-item.checked-fail{background:var(--red-lt);border-color:#fca5a5}
+.cl-item.checked-fail .cl-item-text{color:var(--red);font-weight:500}
+.cl-item.checked-fail .cl-checkmark{display:block;color:var(--red)}
+
+/* ── Transmission section ── */
+.tx-section{border:2px solid #f59e0b;border-radius:10px;overflow:hidden;margin-bottom:16px}
+.tx-hdr{background:#92400e;padding:10px 16px;display:flex;align-items:center;gap:8px}
+.tx-hdr span{font-size:12px;font-weight:600;color:#fff;
+  text-transform:uppercase;letter-spacing:.05em}
+.tx-hdr .tx-icon{font-size:16px}
+.tx-options{padding:14px 16px;display:grid;grid-template-columns:1fr 1fr;
+  gap:10px;background:var(--white)}
+.tx-opt{display:flex;align-items:center;gap:12px;padding:12px 16px;
+  border-radius:8px;border:2px solid var(--border);cursor:pointer;
+  transition:all .15s;background:var(--surface)}
+.tx-opt:hover{border-color:#f59e0b;background:#fffbeb}
+.tx-opt.selected-sent{border-color:var(--green);background:var(--green-lt)}
+.tx-opt.selected-na{border-color:var(--muted);background:#f1f5f9}
+.tx-opt input[type=radio]{width:16px;height:16px;accent-color:var(--green);
+  cursor:pointer;flex-shrink:0}
+.tx-opt-text{font-size:13px;font-weight:600;color:var(--slate)}
+.tx-opt.selected-sent .tx-opt-text{color:var(--green)}
+.tx-opt.selected-na .tx-opt-text{color:var(--muted)}
+.tx-warning{display:none;background:var(--red-lt);border:1px solid #fca5a5;
+  border-radius:7px;padding:10px 14px;margin:0 16px 14px;
+  font-size:12px;color:var(--red);font-weight:500}
+.tx-warning.show{display:flex;align-items:center;gap:8px}
+
+/* ── Nav ── */
+.nr{display:flex;justify-content:space-between;align-items:center;margin-top:22px;gap:10px}
+.btn{padding:10px 22px;border-radius:8px;font-size:13px;font-weight:600;
+  cursor:pointer;border:none;transition:all .15s;font-family:var(--sans)}
+.bp{background:var(--navy);color:#fff}
+.bp:hover{background:#162d55;transform:translateY(-1px)}
+.bs{background:var(--white);color:var(--slate);border:1.5px solid var(--border)}
+.bs:hover{background:var(--surface)}
+.bsub{background:var(--green);color:#fff;padding:12px 32px;font-size:14px}
+.bsub:hover{background:#085f3b;transform:translateY(-1px)}
+.bsub:disabled{background:var(--border);cursor:not-allowed;transform:none}
+
+/* ── Review ── */
+.rt{width:100%;border-collapse:collapse;font-size:13px}
+.rt tr td{padding:9px 12px;border-bottom:1px solid #f1f5f9;vertical-align:top}
+.rt tr:last-child td{border-bottom:none}
+.rt td:first-child{color:var(--muted);font-size:11px;text-transform:uppercase;
+  letter-spacing:.04em;font-weight:500;width:38%}
+.rt td:last-child{font-weight:500;font-family:var(--mono);color:var(--slate)}
+.sp{display:inline-block;padding:3px 10px;border-radius:99px;font-size:11px;font-weight:700}
+
+/* ── Progress / Success ── */
+.pw{display:none;background:var(--navy);border-radius:10px;padding:20px;
+  margin-top:16px;text-align:center}
+.pw.show{display:block}
+.pbg{background:rgba(255,255,255,.1);border-radius:99px;height:6px;margin:12px 0;overflow:hidden}
+.pb{height:100%;background:#22d3ee;border-radius:99px;width:0%;transition:width .4s}
+.pm{font-size:12px;color:#94a3b8;font-family:var(--mono)}
+.suc{display:none;text-align:center;padding:3rem 2rem}
+.suc.show{display:block;animation:slideIn .3s ease}
+.suc-icon{font-size:64px;margin-bottom:16px;display:block}
+.suc h2{font-size:22px;font-weight:600;color:var(--navy);margin-bottom:8px}
+.suc p{color:var(--muted);font-size:14px;margin-bottom:24px}
+.rid{font-family:var(--mono);font-size:13px;background:var(--navy);color:#22d3ee;
+  padding:8px 20px;border-radius:6px;display:inline-block;margin-bottom:24px}
+.em{font-size:11px;color:var(--red);margin-top:4px;display:none}
+.alert-box{display:none;position:fixed;top:70px;left:50%;transform:translateX(-50%);
+  background:#1e3a5f;border:2px solid #f59e0b;border-radius:12px;padding:20px 24px;
+  z-index:9999;max-width:420px;width:90%;box-shadow:0 8px 32px rgba(0,0,0,.35);
+  text-align:center;font-family:var(--sans)}
+.alert-box.show{display:block;animation:slideIn .25s ease}
+.sect-label{font-size:11px;font-weight:600;color:var(--muted);
+  text-transform:uppercase;letter-spacing:.05em;margin-bottom:8px;display:block}
+@media(max-width:600px){.fg,.sg,.tx-options{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<div class="topbar">
+  <div class="brand"><div class="dot"></div>Inspection Data Collection</div>
+  <div class="nav-links">
+    <a class="nav-link" href="/update">&#9998; Update</a>
+    <a class="nav-link" href="/dashboard">&#128202; Dashboard</a>
+      <a class="nav-link" href="/logout" style="color:#f87171;border-color:rgba(248,113,113,.3)">&#x2192; Sign Out</a>
+  </div>
+</div>
+<div class="page">
+  <div class="steps">
+    <div class="step active" id="step-1"><span class="sn">01</span>Device</div>
+    <div class="step" id="step-2"><span class="sn">02</span>Personnel</div>
+    <div class="step" id="step-3"><span class="sn">03</span>Seals</div>
+    <div class="step" id="step-4"><span class="sn">04</span>Checklist</div>
+    <div class="step" id="step-5"><span class="sn">05</span>Review</div>
+  </div>
+
+  <!-- STEP 1 — Device -->
+  <div class="card active" id="card-1">
+    <div class="ch"><div class="ci">&#128187;</div><h2>Device Identification</h2><span class="badge">Step 1 of 5</span></div>
+    <div class="cb">
+      <div class="af" id="af">&#10003; Device found &mdash; Region, Sub &amp; Location auto-filled</div>
+      <div class="fg one" style="margin-bottom:14px">
+        <div class="field">
+          <label>Device Serial Number <span class="req">*</span></label>
+          <div class="dw">
+            <input type="text" id="inp-serial" placeholder="DS0322321034" maxlength="20" autocomplete="off" spellcheck="false">
+            <div class="dspin" id="dspin"></div>
+            <div class="dok" id="dok">&#10003;</div>
+            <div class="der" id="der">&#10007;</div>
+          </div>
+          <div class="em" id="err-serial">Enter a valid DS serial number</div>
+        </div>
+      </div>
+      <div class="db" id="db">
+        <div><label>Region</label><span id="dw2">&mdash;</span></div>
+        <div><label>Sub</label><span id="dsub">&mdash;</span></div>
+        <div><label>Location</label><span id="dloc">&mdash;</span></div>
+      </div>
+      <div class="fg">
+        <div class="field"><label>Region <span class="at">AUTO</span></label><div class="ro" id="ro-w">&mdash;</div></div>
+        <div class="field"><label>Sub <span class="at">AUTO</span></label><div class="ro" id="ro-s">&mdash;</div></div>
+        <div class="field"><label>Storage Location <span class="at">AUTO</span></label><div class="ro" id="ro-l">&mdash;</div></div>
+        <div class="field"><label>Date <span class="at">AUTO</span></label><div class="ro" id="ro-d">&mdash;</div></div>
+        <div class="field"><label>SIM No. <span class="at">AUTO</span></label><div class="ro" id="ro-sim">&mdash;</div></div>
+        <div class="field"><label>Modem IMEI <span class="at">AUTO</span></label><div class="ro" id="ro-imei">&mdash;</div></div>
+        <div class="field"><label>Asset Purpose <span class="at">AUTO</span></label><div class="ro" id="ro-purpose">&mdash;</div></div>
+      </div>
+      <div class="nr"><span></span><button class="btn bp" onclick="go(2)">Next: Personnel &rarr;</button></div>
+    </div>
+  </div>
+
+  <!-- STEP 2 — Personnel -->
+  <div class="card" id="card-2">
+    <div class="ch"><div class="ci">&#128101;</div><h2>Personnel</h2><span class="badge">Step 2 of 5</span></div>
+    <div class="cb">
+      <div class="fg">
+        <div class="field">
+          <label>Test Unit Feeder <span class="req">*</span></label>
+          <select id="inp-feeder" autocomplete="off">
+            <option value="">&mdash; Select &mdash;</option>
+            {% for n in inspectors %}<option value="{{n}}">{{n}}</option>{% endfor %}
+          </select>
+          <div class="em" id="err-feeder">Required</div>
+        </div>
+        <div class="field">
+          <label>QA Assurer <span class="req">*</span></label>
+          <select id="inp-qa" autocomplete="off">
+            <option value="">&mdash; Select &mdash;</option>
+            {% for n in inspectors %}<option value="{{n}}">{{n}}</option>{% endfor %}
+          </select>
+          <div class="em" id="err-qa">Required</div>
+        </div>
+      </div>
+      <div class="nr">
+        <button class="btn bs" onclick="go(1)">&larr; Back</button>
+        <button class="btn bp" onclick="go(3)">Next: Seals &rarr;</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- STEP 3 — Seals -->
+  <div class="card" id="card-3">
+    <div class="ch"><div class="ci">&#128274;</div><h2>Seals &amp; Count</h2><span class="badge">Step 3 of 5</span></div>
+    <div class="cb">
+      <div class="fg">
+        <div class="field"><label>Main (Front) Seal ID <span class="req">*</span></label><input type="text" id="inp-ms" placeholder="50585583" maxlength="12" autocomplete="off"><div class="em" id="err-ms">Required</div></div>
+        <div class="field"><label>Backup (Rear) Seal ID <span class="req">*</span></label><input type="text" id="inp-bs" placeholder="50585582" maxlength="12" autocomplete="off"><div class="em" id="err-bs">Required</div></div>
+        <div class="field"><label>Protected Count</label><input type="number" id="inp-pc" placeholder="1010" min="0" autocomplete="off"></div>
+        <div class="field"><label>Public Count (Processing Results)</label><input type="number" id="inp-pub" placeholder="19" min="0" autocomplete="off"></div>
+      </div>
+      <div class="nr">
+        <button class="btn bs" onclick="go(2)">&larr; Back</button>
+        <button class="btn bp" onclick="go(4)">Next: Checklist &rarr;</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- STEP 4 — Checklist (NEW) -->
+  <div class="card" id="card-4">
+    <div class="ch"><div class="ci">&#128203;</div><h2>Test Status &amp; Checklist</h2><span class="badge">Step 4 of 5</span></div>
+    <div class="cb">
+
+      <!-- Test Status -->
+      <div style="margin-bottom:20px">
+        <span class="sect-label">Test Result <span class="req">*</span></span>
+        <div class="em" id="err-status" style="margin-bottom:6px">Please select a test result</div>
+        <div class="sg">
+          <div class="sb" id="sb-COMPLETED" onclick="setSt('COMPLETED')"><span class="si">&#9989;</span><span class="sl">Completed</span></div>
+          <div class="sb" id="sb-FAILED" onclick="setSt('FAILED')"><span class="si">&#10060;</span><span class="sl">Failed</span></div>
+          <div class="sb" id="sb-UNDER_MAINTENANCE" onclick="setSt('UNDER_MAINTENANCE')"><span class="si">&#128295;</span><span class="sl">Under Maintenance</span></div>
+        </div>
+      </div>
+
+      <!-- SECTION 1 — Test Unit Feeder Checklist -->
+      <div class="cl-section">
+        <div class="cl-section-hdr">
+          <span class="cl-title">&#128203; Section 1 &mdash; Test Unit Feeder Checklist<span id="bf-mode-hint" style="font-size:10px;font-weight:400;color:#94a3b8;margin-left:8px">Select status first</span></span>
+          <div style="display:flex;align-items:center;gap:10px">
+            <span class="cl-count" id="bf-count">0 / 6</span>
+            <button class="btn-select-all" id="bf-sel-all" onclick="selectAll('bf')">Select All</button>
+          </div>
+        </div>
+        <div class="cl-items">
+          <label class="cl-item" id="bf-item-1" onclick="toggleCheck('bf',1)">
+            <input type="checkbox" id="bf-1" onclick="event.stopPropagation();toggleCheck('bf',1)">
+            <span class="cl-item-text">Configuration report date and time correct</span>
+            <span class="cl-checkmark">&#10003;</span>
+          </label>
+          <label class="cl-item" id="bf-item-2" onclick="toggleCheck('bf',2)">
+            <input type="checkbox" id="bf-2" onclick="event.stopPropagation();toggleCheck('bf',2)">
+            <span class="cl-item-text">Open Polls and print Zero Report</span>
+            <span class="cl-checkmark">&#10003;</span>
+          </label>
+          <label class="cl-item" id="bf-item-3" onclick="toggleCheck('bf',3)">
+            <input type="checkbox" id="bf-3" onclick="event.stopPropagation();toggleCheck('bf',3)">
+            <span class="cl-item-text">Device information is correct on Zero Report (region, sub, date and time)</span>
+            <span class="cl-checkmark">&#10003;</span>
+          </label>
+          <label class="cl-item" id="bf-item-4" onclick="toggleCheck('bf',4)">
+            <input type="checkbox" id="bf-4" onclick="event.stopPropagation();toggleCheck('bf',4)">
+            <span class="cl-item-text">Test Units fed through four (4) different orientations</span>
+            <span class="cl-checkmark">&#10003;</span>
+          </label>
+          <label class="cl-item" id="bf-item-5" onclick="toggleCheck('bf',5)">
+            <input type="checkbox" id="bf-5" onclick="event.stopPropagation();toggleCheck('bf',5)">
+            <span class="cl-item-text">No issues feeding test units</span>
+            <span class="cl-checkmark">&#10003;</span>
+          </label>
+          <label class="cl-item" id="bf-item-6" onclick="toggleCheck('bf',6)">
+            <input type="checkbox" id="bf-6" onclick="event.stopPropagation();toggleCheck('bf',6)">
+            <span class="cl-item-text">Results indicate the 3-2-1-2&hellip; outcome</span>
+            <span class="cl-checkmark">&#10003;</span>
+          </label>
+        </div>
+        <div id="err-bf" style="display:none;background:var(--red-lt);padding:8px 16px;
+          font-size:12px;color:var(--red);font-weight:500">
+          &#9888; COMPLETED: all items required. FAILED/MAINTENANCE: tick at least one failed item.
+        </div>
+      </div>
+
+      <!-- SECTION 2 — Result Transmission -->
+      <div class="tx-section">
+        <div class="tx-hdr">
+          <span class="tx-icon">&#128225;</span>
+          <span>Section 2 &mdash; Result Transmission <span style="color:#fcd34d;font-size:10px;margin-left:6px">REQUIRED</span></span>
+        </div>
+        <div class="tx-options">
+          <div class="tx-opt" id="tx-sent" onclick="setTx('sent')">
+            <input type="radio" name="tx" id="tx-r-sent" value="sent">
+            <span class="tx-opt-text">&#9989; Results Transmission SENT</span>
+          </div>
+          <div class="tx-opt" id="tx-na" onclick="setTx('na')">
+            <input type="radio" name="tx" id="tx-r-na" value="na">
+            <span class="tx-opt-text">Results Transmission NOT APPLICABLE</span>
+          </div>
+        </div>
+        <div class="tx-warning" id="tx-warning">
+          &#9888; You selected SENT but not all checklist items are ticked. Please complete all sections before submitting.
+        </div>
+        <div id="err-tx" style="display:none;background:var(--red-lt);padding:8px 16px;
+          font-size:12px;color:var(--red);font-weight:500">
+          &#9888; Please select a Result Transmission option.
+        </div>
+      </div>
+
+      <!-- SECTION 3 — QA Assurer Checklist -->
+      <div class="cl-section">
+        <div class="cl-section-hdr">
+          <span class="cl-title">&#9989; Section 3 &mdash; Quality Assurer Checklist<span id="qa-mode-hint" style="font-size:10px;font-weight:400;color:#94a3b8;margin-left:8px">Select status first</span></span>
+          <div style="display:flex;align-items:center;gap:10px">
+            <span class="cl-count" id="qa-count">0 / 8</span>
+            <button class="btn-select-all" id="qa-sel-all" onclick="selectAll('qa')">Select All</button>
+          </div>
+        </div>
+        <div class="cl-items">
+          <label class="cl-item" id="qa-item-1" onclick="toggleCheck('qa',1)">
+            <input type="checkbox" id="qa-1" onclick="event.stopPropagation();toggleCheck('qa',1)">
+            <span class="cl-item-text">Results indicate the 3-2-1-2&hellip; outcome</span>
+            <span class="cl-checkmark">&#10003;</span>
+          </label>
+          <label class="cl-item" id="qa-item-2" onclick="toggleCheck('qa',2)">
+            <input type="checkbox" id="qa-2" onclick="event.stopPropagation();toggleCheck('qa',2)">
+            <span class="cl-item-text">Information on Zero Report is correct (region, sub, date and time)</span>
+            <span class="cl-checkmark">&#10003;</span>
+          </label>
+          <label class="cl-item" id="qa-item-3" onclick="toggleCheck('qa',3)">
+            <input type="checkbox" id="qa-3" onclick="event.stopPropagation();toggleCheck('qa',3)">
+            <span class="cl-item-text">Confirm and reinstall the backup USB</span>
+            <span class="cl-checkmark">&#10003;</span>
+          </label>
+          <label class="cl-item" id="qa-item-4" onclick="toggleCheck('qa',4)">
+            <input type="checkbox" id="qa-4" onclick="event.stopPropagation();toggleCheck('qa',4)">
+            <span class="cl-item-text">Clear the vote totals and setup to &ldquo;Open Poll&rdquo; screen (DO NOT OPEN POLL)</span>
+            <span class="cl-checkmark">&#10003;</span>
+          </label>
+          <label class="cl-item" id="qa-item-5" onclick="toggleCheck('qa',5)">
+            <input type="checkbox" id="qa-5" onclick="event.stopPropagation();toggleCheck('qa',5)">
+            <span class="cl-item-text">Shutdown device from Admin</span>
+            <span class="cl-checkmark">&#10003;</span>
+          </label>
+          <label class="cl-item" id="qa-item-6" onclick="toggleCheck('qa',6)">
+            <input type="checkbox" id="qa-6" onclick="event.stopPropagation();toggleCheck('qa',6)">
+            <span class="cl-item-text">Seal the rear (backup) USB compartment &amp; record rear security seal no.</span>
+            <span class="cl-checkmark">&#10003;</span>
+          </label>
+          <label class="cl-item" id="qa-item-7" onclick="toggleCheck('qa',7)">
+            <input type="checkbox" id="qa-7" onclick="event.stopPropagation();toggleCheck('qa',7)">
+            <span class="cl-item-text">Seal the front (main) USB compartment &amp; record front security seal no.</span>
+            <span class="cl-checkmark">&#10003;</span>
+          </label>
+          <label class="cl-item" id="qa-item-8" onclick="toggleCheck('qa',8)">
+            <input type="checkbox" id="qa-8" onclick="event.stopPropagation();toggleCheck('qa',8)">
+            <span class="cl-item-text">Fold and attach entire results tape to the back of this checklist</span>
+            <span class="cl-checkmark">&#10003;</span>
+          </label>
+        </div>
+        <div id="err-qa-cl" style="display:none;background:var(--red-lt);padding:8px 16px;
+          font-size:12px;color:var(--red);font-weight:500">
+          &#9888; COMPLETED: all items required. FAILED/MAINTENANCE: tick at least one failed item.
+        </div>
+      </div>
+
+      <!-- Notes -->
+      <div class="field" style="margin-bottom:0">
+        <label>Issue Details / Notes</label>
+        <textarea id="inp-notes" rows="3" autocomplete="off" placeholder="Add any notes or issues here..."></textarea>
+      </div>
+
+      <div class="nr">
+        <button class="btn bs" onclick="go(3)">&larr; Back</button>
+        <button class="btn bp" onclick="go(5)">Review &rarr;</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- STEP 5 — Review -->
+  <div class="card" id="card-5">
+    <div class="ch"><div class="ci">&#128269;</div><h2>Review &amp; Submit</h2><span class="badge">Step 5 of 5</span></div>
+    <div class="cb">
+      <table class="rt" id="rt"></table>
+      <div class="pw" id="pw">
+        <div class="pm" id="pm">Saving...</div>
+        <div class="pbg"><div class="pb" id="pb"></div></div>
+      </div>
+      <div class="nr">
+        <button class="btn bs" onclick="go(4)">&larr; Edit</button>
+        <button class="btn bsub" id="subbtn" onclick="submitForm()">Save Record &rarr;</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Success -->
+  <div class="suc" id="suc">
+    <span class="suc-icon">&#127881;</span>
+    <h2>Record Saved</h2>
+    <p>Written to <strong>Inspection_Data.xlsx</strong></p>
+    <div class="rid" id="rid">REC-0001</div><br>
+    <button class="btn bp" onclick="resetForm()" style="margin-right:8px">&#43; Next Device</button>
+    <a class="btn bs" href="/dashboard">&#128202; Dashboard</a>
+  </div>
+</div>
+
+<div class="alert-box" id="alert-box">
+  <div style="font-size:32px;margin-bottom:10px">&#9888;&#65039;</div>
+  <div style="color:#fbbf24;font-weight:600;font-size:15px;margin-bottom:8px" id="alert-title">Alert</div>
+  <div style="color:#bfdbfe;font-size:13px;line-height:1.6;margin-bottom:16px" id="alert-msg"></div>
+  <button onclick="closeAlert()" style="background:#f59e0b;color:#1e3a5f;border:none;
+    padding:9px 22px;border-radius:7px;font-weight:600;cursor:pointer;font-size:13px">OK</button>
+</div>
+
+<script>
+var curStep   = 1;
+var curStatus = '';
+var curTx     = ''; // 'sent' or 'na'
+var deviceData = {region:'', sub:'', loc:'', sim:'', imei:'', purpose:''};
+var today = '';
+var BF_TOTAL = 6, QA_TOTAL = 8;
+
+window.addEventListener('load', function() {
+  today = new Date().toLocaleDateString('en-CA');
+  document.getElementById('ro-d').textContent = today;
+  var s = document.getElementById('inp-serial');
+  function trigger() { onSerial(s.value.trim().toUpperCase()); }
+  s.addEventListener('input',  trigger);
+  s.addEventListener('change', trigger);
+  s.addEventListener('paste',  function() { setTimeout(trigger, 60); });
+});
+
+// ── DS Lookup ──────────────────────────────────────────────────────────────
+function onSerial(v) {
+  var spin = document.getElementById('dspin');
+  var ok   = document.getElementById('dok');
+  var er   = document.getElementById('der');
+  ok.style.display = er.style.display = 'none';
+  document.getElementById('db').classList.remove('show');
+  document.getElementById('af').classList.remove('show');
+  deviceData = {region:'', sub:'', loc:'', sim:'', imei:'', purpose:''};
+  clrDev();
+  if (v.length < 12) return;
+  spin.style.display = 'block';
+  fetch('/api/lookup/' + encodeURIComponent(v))
+    .then(function(r) { return r.json(); })
+    .then(function(d) {
+      spin.style.display = 'none';
+      if (d.found) {
+        deviceData = {region:d.region, sub:d.sub, loc:d.loc,
+                      sim:d.sim||'', imei:d.imei||'', purpose:d.purpose||''};
+        ok.style.display = 'block';
+        document.getElementById('db').classList.add('show');
+        document.getElementById('af').classList.add('show');
+        document.getElementById('dw2').textContent        = d.region;
+        document.getElementById('dsub').textContent       = d.sub;
+        document.getElementById('dloc').textContent       = d.loc;
+        document.getElementById('ro-w').textContent       = d.region;
+        document.getElementById('ro-s').textContent       = d.sub;
+        document.getElementById('ro-l').textContent       = d.loc;
+        document.getElementById('ro-sim').textContent     = d.sim     || '\u2014';
+        document.getElementById('ro-imei').textContent    = d.imei    || '\u2014';
+        document.getElementById('ro-purpose').textContent = d.purpose || '\u2014';
+      } else {
+        er.style.display = 'block';
+        deviceData = {region:'Not in master', sub:'Not in master', loc:'', sim:'', imei:'', purpose:''};
+        document.getElementById('ro-w').textContent = '\u26a0 Not in master';
+        document.getElementById('ro-s').textContent = '\u26a0 Not in master';
+      }
+    })
+    .catch(function() { spin.style.display = 'none'; });
+}
+
+function clrDev() {
+  ['ro-w','ro-s','ro-l','ro-sim','ro-imei','ro-purpose'].forEach(function(id) {
+    document.getElementById(id).textContent = '\u2014';
+  });
+}
+
+// ── Status ─────────────────────────────────────────────────────────────────
+function setSt(s) {
+  curStatus = s;
+  ['COMPLETED','FAILED','UNDER_MAINTENANCE'].forEach(function(x) {
+    document.getElementById('sb-' + x).className = 'sb' + (x === s ? ' sel-' + s : '');
+  });
+  document.getElementById('err-status').style.display = 'none';
+
+  var isComp = s === 'COMPLETED';
+  // Update section headers to reflect PASS vs FAIL context
+  var bfHint  = document.getElementById('bf-mode-hint');
+  var qaHint  = document.getElementById('qa-mode-hint');
+  var txSent  = document.getElementById('tx-sent');
+  var txNa    = document.getElementById('tx-na');
+
+  if (isComp) {
+    if (bfHint)  bfHint.textContent  = 'All items must be checked';
+    if (qaHint)  qaHint.textContent  = 'All items must be checked';
+    // For COMPLETED, grey out NOT APPLICABLE
+    if (txNa)  txNa.style.opacity  = '0.4';
+    if (txSent) txSent.style.opacity = '1';
+  } else {
+    if (bfHint)  bfHint.textContent  = 'Check the items that FAILED';
+    if (qaHint)  qaHint.textContent  = 'Check the items that FAILED';
+    if (txNa)  txNa.style.opacity  = '1';
+    if (txSent) txSent.style.opacity = '1';
+  }
+
+  // Reset checklist and transmission when switching status
+  ['bf','qa'].forEach(function(sec) {
+    var total = sec === 'bf' ? BF_TOTAL : QA_TOTAL;
+    for (var i = 1; i <= total; i++) {
+      document.getElementById(sec + '-' + i).checked = false;
+      document.getElementById(sec + '-item-' + i).classList.remove('checked');
+    }
+    updateCount(sec);
+  });
+  curTx = '';
+  document.getElementById('tx-sent').className = 'tx-opt';
+  document.getElementById('tx-na').className   = 'tx-opt';
+  document.getElementById('tx-r-sent').checked = false;
+  document.getElementById('tx-r-na').checked   = false;
+  document.getElementById('tx-warning').className = 'tx-warning';
+}
+
+// ── Transmission ───────────────────────────────────────────────────────────
+function setTx(val) {
+  curTx = val;
+  document.getElementById('tx-sent').className = 'tx-opt' + (val === 'sent' ? ' selected-sent' : '');
+  document.getElementById('tx-na').className   = 'tx-opt' + (val === 'na'   ? ' selected-na'   : '');
+  document.getElementById('tx-r-sent').checked = val === 'sent';
+  document.getElementById('tx-r-na').checked   = val === 'na';
+  document.getElementById('err-tx').style.display = 'none';
+  checkTxWarning();
+}
+
+function checkTxWarning() {
+  if (curStatus !== 'COMPLETED') {
+    document.getElementById('tx-warning').className = 'tx-warning';
+    return;
+  }
+  var bfDone = countChecked('bf') === BF_TOTAL;
+  var qaDone = countChecked('qa') === QA_TOTAL;
+  var warn   = curTx === 'sent' && (!bfDone || !qaDone);
+  document.getElementById('tx-warning').className = 'tx-warning' + (warn ? ' show' : '');
+}
+
+// ── Checklist ──────────────────────────────────────────────────────────────
+function toggleCheck(section, num) {
+  var cb   = document.getElementById(section + '-' + num);
+  var item = document.getElementById(section + '-item-' + num);
+  cb.checked = !cb.checked;
+  var isFail = curStatus === 'FAILED' || curStatus === 'UNDER_MAINTENANCE';
+  item.classList.remove('checked','checked-fail');
+  if (cb.checked) item.classList.add(isFail ? 'checked-fail' : 'checked');
+  updateCount(section);
+  checkTxWarning();
+}
+
+function countChecked(section) {
+  var total = section === 'bf' ? BF_TOTAL : QA_TOTAL;
+  var count = 0;
+  for (var i = 1; i <= total; i++) {
+    if (document.getElementById(section + '-' + i).checked) count++;
+  }
+  return count;
+}
+
+function updateCount(section) {
+  var total   = section === 'bf' ? BF_TOTAL : QA_TOTAL;
+  var checked = countChecked(section);
+  var countEl = document.getElementById(section + '-count');
+  var btnEl   = document.getElementById(section + '-sel-all');
+  countEl.textContent = checked + ' / ' + total;
+  var allDone = checked === total;
+  if (allDone) {
+    countEl.style.color = 'var(--green)';
+    btnEl.className = 'btn-select-all all-done';
+    btnEl.textContent = '\u2713 All Selected';
+  } else {
+    countEl.style.color = '';
+    btnEl.className = 'btn-select-all';
+    btnEl.textContent = 'Select All';
+  }
+}
+
+function selectAll(section) {
+  var total   = section === 'bf' ? BF_TOTAL : QA_TOTAL;
+  var checked = countChecked(section);
+  var setTo   = checked < total;
+  var isFail  = curStatus === 'FAILED' || curStatus === 'UNDER_MAINTENANCE';
+  for (var i = 1; i <= total; i++) {
+    document.getElementById(section + '-' + i).checked = setTo;
+    var item = document.getElementById(section + '-item-' + i);
+    item.classList.remove('checked','checked-fail');
+    if (setTo) item.classList.add(isFail ? 'checked-fail' : 'checked');
+  }
+  updateCount(section);
+  checkTxWarning();
+}
+
+// ── Navigation ─────────────────────────────────────────────────────────────
+function go(n) {
+  if (n > curStep && !validate(curStep)) return;
+  curStep = n;
+  for (var i = 1; i <= 5; i++) {
+    document.getElementById('card-' + i).className = 'card' + (i === n ? ' active' : '');
+    document.getElementById('step-' + i).className =
+      'step' + (i === n ? ' active' : i < n ? ' done' : '');
+  }
+  if (n === 5) buildReview();
+  window.scrollTo(0, 0);
+}
+
+// ── Validation ─────────────────────────────────────────────────────────────
+function validate(n) {
+  var ok = true;
+  function sh(id, show) { document.getElementById(id).style.display = show ? 'block' : 'none'; }
+
+  if (n === 1) {
+    var sv = document.getElementById('inp-serial').value.trim().toUpperCase();
+    if (!sv.startsWith('DS') || sv.length < 12) { sh('err-serial', true); ok = false; }
+    else sh('err-serial', false);
+  }
+  if (n === 2) {
+    if (!document.getElementById('inp-feeder').value) { sh('err-feeder', true); ok = false; } else sh('err-feeder', false);
+    if (!document.getElementById('inp-qa').value)     { sh('err-qa',     true); ok = false; } else sh('err-qa',     false);
+  }
+  if (n === 3) {
+    if (!document.getElementById('inp-ms').value) { sh('err-ms', true); ok = false; } else sh('err-ms', false);
+    if (!document.getElementById('inp-bs').value) { sh('err-bs', true); ok = false; } else sh('err-bs', false);
+  }
+  if (n === 4) {
+    // Status must always be selected
+    if (!curStatus) { sh('err-status', true); ok = false; } else sh('err-status', false);
+
+    // Transmission must always be selected
+    if (!curTx) { sh('err-tx', true); ok = false; } else sh('err-tx', false);
+
+    if (curStatus === 'COMPLETED') {
+      // COMPLETED: ALL items must be checked
+      if (countChecked('bf') < BF_TOTAL) { sh('err-bf', true); ok = false; } else sh('err-bf', false);
+      if (countChecked('qa') < QA_TOTAL) { sh('err-qa-cl', true); ok = false; } else sh('err-qa-cl', false);
+      // COMPLETED must use SENT
+      if (curTx && curTx !== 'sent') {
+        showAlert(
+          'Transmission Required for COMPLETED',
+          'A COMPLETED device must have Results Transmission set to SENT. Please select SENT.'
+        );
+        ok = false;
+      }
+      // TX SENT + incomplete = block
+      if (curTx === 'sent' && (countChecked('bf') < BF_TOTAL || countChecked('qa') < QA_TOTAL)) {
+        showAlert(
+          'Checklist Incomplete',
+          'Results Transmission is SENT but not all checklist items are ticked. Please complete all items.'
+        );
+        ok = false;
+      }
+    } else {
+      // FAILED / UNDER_MAINTENANCE: at least 1 item from ANY of the 3 sections
+      sh('err-bf', false); sh('err-qa-cl', false);
+      var totalSelected = countChecked('bf') + (curTx ? 1 : 0) + countChecked('qa');
+      if (totalSelected === 0) {
+        sh('err-bf', true);
+        ok = false;
+      }
+    }
+  }
+  return ok;
+}
+
+// ── Review ─────────────────────────────────────────────────────────────────
+function gv(id) { return document.getElementById(id).value || ''; }
+
+function buildReview() {
+  var s  = curStatus;
+  var sc = s === 'COMPLETED' ? 'background:#d1fae5;color:#065f46'
+         : s === 'FAILED'    ? 'background:#fee2e2;color:#991b1b'
+         :                     'background:#fef3c7;color:#92400e';
+  var txLabel = curTx === 'sent' ? '&#9989; Sent' : '&mdash; Not Applicable';
+  var bfChecked = countChecked('bf');
+  var qaChecked = countChecked('qa');
+  var serial = document.getElementById('inp-serial').value.toUpperCase();
+  var rows = [
+    ['Serial',             serial],
+    ['Region / Sub',         (deviceData.region||'\u2014') + ' / ' + (deviceData.sub||'\u2014')],
+    ['Location',           deviceData.loc || '\u2014'],
+    ['Date',               today],
+    ['Test Unit Feeder',      gv('inp-feeder')],
+    ['QA Assurer',         gv('inp-qa')],
+    ['Main Seal ID',       gv('inp-ms')],
+    ['Backup Seal ID',     gv('inp-bs')],
+    ['Protected Count',    gv('inp-pc')  || '\u2014'],
+    ['Public Count',       gv('inp-pub') || '\u2014'],
+    ['Status',             '<span class="sp" style="' + sc + '">' + s + '</span>'],
+    ['BF Checklist',       curStatus === 'COMPLETED'
+      ? bfChecked + ' / ' + BF_TOTAL + ' all passed'
+      : bfChecked + ' item(s) FAILED'],
+    ['Result Transmission',txLabel],
+    ['QA Checklist',       curStatus === 'COMPLETED'
+      ? qaChecked + ' / ' + QA_TOTAL + ' all passed'
+      : qaChecked + ' item(s) FAILED'],
+    ['Notes',              gv('inp-notes') || '\u2014'],
+  ];
+  document.getElementById('rt').innerHTML = rows.map(function(r) {
+    return '<tr><td>' + r[0] + '</td><td>' + r[1] + '</td></tr>';
+  }).join('');
+}
+
+// ── Submit ──────────────────────────────────────────────────────────────────
+function submitForm() {
+  var btn = document.getElementById('subbtn');
+  btn.disabled = true;
+  var pw = document.getElementById('pw');
+  var pb = document.getElementById('pb');
+  var pm = document.getElementById('pm');
+  pw.classList.add('show');
+  function p(pct, txt) { pb.style.width = pct + '%'; pm.textContent = txt; }
+  p(30, 'Saving to Inspection_Data.xlsx...');
+
+  // Build checklist values for payload
+  var bfItems = [];
+  for (var i = 1; i <= BF_TOTAL; i++) {
+    bfItems.push(document.getElementById('bf-' + i).checked ? 'PASS' : 'FAIL');
+  }
+  var qaItems = [];
+  for (var j = 1; j <= QA_TOTAL; j++) {
+    qaItems.push(document.getElementById('qa-' + j).checked ? 'PASS' : 'FAIL');
+  }
+
+  var payload = {
+    serial:          document.getElementById('inp-serial').value.toUpperCase(),
+    date:            today,
+    region:            deviceData.region,
+    sub:             deviceData.sub,
+    location:        deviceData.loc,
+    feeder:          gv('inp-feeder'),
+    qa:              gv('inp-qa'),
+    main_seal:       gv('inp-ms'),
+    backup_seal:     gv('inp-bs'),
+    counter_a: gv('inp-pc'),
+    counter_b:    gv('inp-pub'),
+    status:          curStatus,
+    transmission:    curTx === 'sent' ? 'Sent' : 'Not Applicable',
+    bf_checklist:    bfItems,
+    qa_checklist:    qaItems,
+    notes:           gv('inp-notes')
+  };
+
+  p(60, 'Writing row...');
+  fetch('/api/save', {
+    method: 'POST',
+    headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify(payload)
+  })
+  .then(function(r) { return r.json(); })
+  .then(function(j) {
+    if (!j.ok) {
+      pw.classList.remove('show'); btn.disabled = false;
+      if (j.locked) showAlert('Inspection_Data.xlsx is open in Excel',
+        'Please close the Excel file first, then click Save Record again.');
+      else showAlert('Error', j.error || 'Unknown error');
+      return;
+    }
+    p(100, 'Saved!');
+    setTimeout(function() {
+      document.getElementById('rid').textContent =
+        'REC-' + String(j.id).padStart(4,'0') + ' \u00b7 ' + payload.serial;
+      document.getElementById('card-5').style.display = 'none';
+      document.getElementById('suc').classList.add('show');
+      document.querySelectorAll('.step').forEach(function(st) { st.className = 'step done'; });
+    }, 400);
+  })
+  .catch(function(e) {
+    pw.classList.remove('show'); btn.disabled = false;
+    showAlert('Error', e.message);
+  });
+}
+
+function showAlert(title, msg) {
+  document.getElementById('alert-title').textContent = title;
+  document.getElementById('alert-msg').textContent   = msg;
+  document.getElementById('alert-box').classList.add('show');
+}
+function closeAlert() { document.getElementById('alert-box').classList.remove('show'); }
+
+// ── Reset ───────────────────────────────────────────────────────────────────
+function resetForm() {
+  ['inp-serial','inp-feeder','inp-qa','inp-ms','inp-bs',
+   'inp-pc','inp-pub','inp-notes'].forEach(function(id) {
+    document.getElementById(id).value = '';
+  });
+  curStatus = ''; curTx = '';
+  deviceData = {region:'', sub:'', loc:'', sim:'', imei:'', purpose:''};
+  ['dok','der'].forEach(function(id) { document.getElementById(id).style.display='none'; });
+  document.getElementById('db').classList.remove('show');
+  document.getElementById('af').classList.remove('show');
+  document.getElementById('pw').classList.remove('show');
+  document.getElementById('suc').classList.remove('show');
+  document.getElementById('subbtn').disabled = false;
+  document.getElementById('card-5').style.display = '';
+  document.getElementById('tx-warning').className = 'tx-warning';
+  // Reset status buttons
+  ['COMPLETED','FAILED','UNDER_MAINTENANCE'].forEach(function(x) {
+    document.getElementById('sb-' + x).className = 'sb';
+  });
+  // Reset transmission
+  document.getElementById('tx-sent').className = 'tx-opt';
+  document.getElementById('tx-na').className   = 'tx-opt';
+  document.getElementById('tx-r-sent').checked = false;
+  document.getElementById('tx-r-na').checked   = false;
+  // Reset all checkboxes
+  ['bf','qa'].forEach(function(sec) {
+    var total = sec === 'bf' ? BF_TOTAL : QA_TOTAL;
+    for (var i = 1; i <= total; i++) {
+      document.getElementById(sec + '-' + i).checked = false;
+      document.getElementById(sec + '-item-' + i).classList.remove('checked');
+    }
+    updateCount(sec);
+  });
+  clrDev();
+  curStep = 1;
+  for (var i = 1; i <= 5; i++) {
+    document.getElementById('card-' + i).className = 'card' + (i === 1 ? ' active' : '');
+    document.getElementById('step-' + i).className = 'step' + (i === 1 ? ' active' : '');
+  }
+  window.scrollTo(0, 0);
+}
+</script>
+</body>
+</html>
